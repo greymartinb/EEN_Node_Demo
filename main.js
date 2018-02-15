@@ -43,7 +43,7 @@ function authenticate(username,password,api,callback){
 		})
 	}
 
-// First step is Authorize, you pass the token and your api key
+// Second step is Authorize, you pass the token and your api key
 // and you recieve a cookie 
 // you may pass the full response of cookie to any future calls 
 // referenced in https://apidocs.eagleeyenetworks.com/#3-authorize
