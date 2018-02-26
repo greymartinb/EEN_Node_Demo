@@ -2,16 +2,23 @@ var async = require("async")
 var request = require("request");
 var request = request.defaults({jar: true});
 
-var username = "your username"
+var username = "username"
 
-var password = "your password"
+var password = "password"
 
-var api = "your API key "+":"
+var api = "api key"+":"
+
+const express = require('express')
+const app = express()
+
+
 
 // holds values to pass into waterfall function
 function values(callback){
 	callback(null,username,password,api)
 }
+
+
 
 // API calls can initially be done against 'https://login.eagleeyenetworks.com' (The host url),
 //  but after the authorization response is returned, API calls should 
@@ -62,16 +69,53 @@ function authorize(api,token,callback){
 	        console.log("response : ", response.statusCode)
 	        var cookies = response.headers['set-cookie'];
 	        console.log("cookies : ",  cookies)
-	        callback(null, api, cookies, token )
+	        callback(null, cookies)
 		})
 	}
 
+
+	//gets list of camera the user has permission to view.
+	//note that the camera esn has to be online to retrive video, or you will recieve a 400 error
+function getDevices(cookies,callback){
+	request.get({
+		url:"https://c001.eagleeyenetworks.com/g/device/list",
+		header: {
+	    'Authorization' : api,
+	    'cookies': cookies
+	  	}
+	  },function (error, response, body) {
+	  		var cameras = JSON.parse(body)
+			console.log("-------authorize-------")
+	        console.log("error : ", error)
+	        console.log("response : ", response.statusCode)
+	        console.log("cameras : ",  cameras)
+	  		console.log(cameras[10][1]) 
+	  		var camera = cameras[12][1]
+	  		callback(null, cookies, camera)
+	  	})
+	}
+
+//sets the page header to include the cookies retreived from the eagleeyenetworks api,
+//then takes the esn of a camera, and load the live stream of the camera in an Iframe
+//note if the camera is offline, you will recieve a 400 error 
+function loadPage(cookies,camera){
+	app.get('/', function(req,res){
+	res.header({
+		'Cookie':cookies}
+		)
+	 res.send('<iframe src=https://c001.eagleeyenetworks.com/live/index.html?id='+camera+' style ="height:500; width:600;"> ')
+	})
+
+	app.listen(3000, () => console.log('Example app listening on port 3000!'))
+}
 
 //just a framework to force synchronous behavior in Node.js
 async.waterfall([
 	values,
     authenticate,
-    authorize
+    authorize,
+    getDevices,
+    loadPage
 ], function (err, result) {
     // result now equals 'done'
     console.log(err)
