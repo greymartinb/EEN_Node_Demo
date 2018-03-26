@@ -1,6 +1,7 @@
 var async = require("async")
 var request = require("request");
 var request = request.defaults({jar: true});
+const fs = require('fs');
 
 var username = "username"
 
@@ -88,26 +89,41 @@ function getDevices(cookies,callback){
 			console.log("-------authorize-------")
 	        console.log("error : ", error)
 	        console.log("response : ", response.statusCode)
-	        console.log("cameras : ",  cameras)
-	  		console.log(cameras[10][1]) 
-	  		var camera = cameras[12][1]
+	        // console.log("cameras : ",  cameras)
+	  		console.log(cameras[15][1]) 
+	  		var camera = cameras[15][1]
 	  		callback(null, cookies, camera)
 	  	})
 	}
 
-//sets the page header to include the cookies retreived from the eagleeyenetworks api,
-//then takes the esn of a camera, and load the live stream of the camera in an Iframe
-//note if the camera is offline, you will recieve a 400 error 
-function loadPage(cookies,camera){
-	app.get('/', function(req,res){
-	res.header({
-		'Cookie':cookies}
-		)
-	 res.send('<iframe src=https://c001.eagleeyenetworks.com/live/index.html?id='+camera+' style ="height:500; width:600;"> ')
-	})
 
-	app.listen(3000, () => console.log('Example app listening on port 3000!'))
-}
+function getLiveStream(cookies,camera,callback){
+		var holder=JSON.stringify(cookies)
+		// console.log(holder)
+		var holder =holder.split("auth_key=")
+		holder = holder[1].split(";")
+		console.log(holder[0])
+		 var sessionId= holder[0]
+		request.get({
+		url:"https://c001.eagleeyenetworks.com/asset/play/video.flv",
+		header: {
+	    // 'Authorization' : api,
+	    // 'cookies': cookies
+		  },
+		qs: {
+			"id":camera,
+			"start_timestamp": "stream_"+(new Date().getTime()),
+			"end_timestamp": "+30000"
+			// "A": sessionId
+			}
+		},function(error,response,body){
+			console.log("-------getImage-------")
+			console.log("error : ", error)
+	        // console.log("response : ", response)
+		}).pipe(fs.createWriteStream('sample.flv'))
+		callback(null)
+	}
+
 
 //just a framework to force synchronous behavior in Node.js
 async.waterfall([
@@ -115,9 +131,8 @@ async.waterfall([
     authenticate,
     authorize,
     getDevices,
-    loadPage
+    getLiveStream
 ], function (err, result) {
     // result now equals 'done'
     console.log(err)
 });
-
