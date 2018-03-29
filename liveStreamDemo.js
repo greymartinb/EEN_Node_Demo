@@ -7,7 +7,7 @@ var username = "username"
 
 var password = "password"
 
-var api = "api key"+":"
+var api = "apikey"+":"
 
 const express = require('express')
 const app = express()
@@ -57,7 +57,7 @@ function authenticate(username,password,api,callback){
 // referenced in https://apidocs.eagleeyenetworks.com/#3-authorize
 function authorize(api,token,callback){
 	request.post({
-	  url: "https://c001.eagleeyenetworks.com/g/aaa/authorize",
+	  url: "https://login.eagleeyenetworks.com/g/aaa/authorize",
 	  header: {
 	    'Authorization' : api,
 	  },
@@ -79,7 +79,7 @@ function authorize(api,token,callback){
 	//note that the camera esn has to be online to retrive video, or you will recieve a 400 error
 function getDevices(cookies,callback){
 	request.get({
-		url:"https://c001.eagleeyenetworks.com/g/device/list",
+		url:"https://login.eagleeyenetworks.com/g/device/list",
 		header: {
 	    'Authorization' : api,
 	    'cookies': cookies
@@ -97,32 +97,27 @@ function getDevices(cookies,callback){
 	}
 
 
-function getLiveStream(cookies,camera,callback){
+function getAuthKey(cookies,camera,callback){
 		var holder=JSON.stringify(cookies)
 		// console.log(holder)
 		var holder =holder.split("auth_key=")
 		holder = holder[1].split(";")
 		console.log(holder[0])
-		 var sessionId= holder[0]
-		request.get({
-		url:"https://c001.eagleeyenetworks.com/asset/play/video.flv",
-		header: {
-	    // 'Authorization' : api,
-	    // 'cookies': cookies
-		  },
-		qs: {
-			"id":camera,
-			"start_timestamp": "stream_"+(new Date().getTime()),
-			"end_timestamp": "+30000"
-			// "A": sessionId
-			}
-		},function(error,response,body){
-			console.log("-------getImage-------")
-			console.log("error : ", error)
-	        // console.log("response : ", response)
-		}).pipe(fs.createWriteStream('sample.flv'))
-		callback(null)
+		var sessionId= holder[0]
+		callback(null,sessionId,camera)
 	}
+
+function renderPage(sessionId,camera,callback){
+
+app.get('/', function(req, res) {
+    res.send(("<HTML><body><iframe width=80% height=80% src=https://login.eagleeyenetworks.com/live/index.html?id="+camera+"&A="+sessionId+"/></body></html>"))
+});
+	app.listen(8080, '127.0.0.1')
+	console.log("<iframe width=80% height=80% src='https://login.eagleeyenetworks.com/live/index.html?id="+camera+"&A="+sessionId+"'/>")
+	callback(null)
+}
+
+
 
 
 
@@ -133,7 +128,8 @@ async.waterfall([
     authenticate,
     authorize,
     getDevices,
-    getLiveStream
+    getAuthKey,
+    renderPage
 ], function (err, result) {
     // result now equals 'done'
     console.log(err)
