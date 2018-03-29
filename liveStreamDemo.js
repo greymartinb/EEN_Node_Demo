@@ -7,7 +7,7 @@ var username = "username"
 
 var password = "password"
 
-var api = "apikey"+":"
+var api = "api key"+":"
 
 const express = require('express')
 const app = express()
@@ -110,10 +110,9 @@ function getAuthKey(cookies,camera,callback){
 function renderPage(sessionId,camera,callback){
 
 app.get('/', function(req, res) {
-    res.send(("<HTML><body><iframe width=80% height=80% src=https://login.eagleeyenetworks.com/live/index.html?id="+camera+"&A="+sessionId+"/></body></html>"))
+    res.send('<HTML><body><iframe width=80% height=80% src="https://login.eagleeyenetworks.com/live/index.html?id='+camera+'&A='+sessionId+'"/></body></html>');
 });
 	app.listen(8080, '127.0.0.1')
-	console.log("<iframe width=80% height=80% src='https://login.eagleeyenetworks.com/live/index.html?id="+camera+"&A="+sessionId+"'/>")
 	callback(null)
 }
 
